@@ -3,7 +3,6 @@ from Genetic_opt.Genetic_algorithm import GeneticAlgorithm
 from simulator import QwantaSimulation
 from all_function import *
 from tqdm import tqdm
-# import multiprocessing
 
 def main_process(
         experiment_name,
@@ -102,16 +101,7 @@ if __name__ == "__main__":
     user_choice = input("Run all config file? (Y/n): ").strip().lower()
 
     if user_choice == 'y':
-        # # Create a multiprocessing pool with the number of desired parallel processes
-        # num_processes = multiprocessing.cpu_count()  # Use all available CPU cores
-        # pool = multiprocessing.Pool(processes=num_processes)
         
-        # # Use pool.map to execute process_config in parallel for each config file
-        # pool.map(process_config, [filename for filename in config_files if filename.endswith(".json")])
-        
-        # # Close the pool and wait for all processes to finish
-        # pool.close()
-        # pool.join()
         pass
 
     elif user_choice == 'n':

@@ -1,7 +1,7 @@
 ### Create new conda environment
 
 ```bash
-$ conda env create -f env.yml -n qnet_env
+$ conda env create -f env.yml -n qnet_ii
 ```
 
 ### Activate environment
