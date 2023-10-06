@@ -36,6 +36,11 @@ def parameterTransform(loss, coherenceTime, gateErr, meaErr):
     coherenceTimeSim = coherenceTime
     gateErrSim = 0.03 - gateErr*0.03
     meaErrSim = 0.1 - meaErr*0.1
+
+    # prevent 0 value for coherence time
+    if coherenceTimeSim == 0:
+        coherenceTimeSim = 0.0001
+
     return lossSim, coherenceTimeSim, gateErrSim, meaErrSim
 
 def paramsTransform(chomosome: Individual):
