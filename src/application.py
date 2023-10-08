@@ -29,13 +29,13 @@ with tab1:
     # ]    
 
     files = st.multiselect('Select your experiment', file_names)
-    print(f'file: {files}')
+    # print(f'file: {files}')
 
     pickled_data = []
     for file in files:
         with open(f'Results/{file}', 'rb') as f:
             pickled_data.append(pickle.load(f))
-    print(f'pickle: {pickled_data}')
+    # print(f'pickle: {pickled_data}')
 
     for data in pickled_data:
 
@@ -129,5 +129,70 @@ with tab1:
 
 with tab2:
     st.write('This is the dataframe of your experiment')
+    # for file in file_names:
+    #     st.write(file)
+
+    df = pd.DataFrame(
+        data={
+            'Experiment name': [],
+            'Date created': [],
+            'Elitism': [],
+            'Mutation rate': [],
+            'Mutation sigma': [],
+            'Weight': [],
+            'Final max fidelity': [],
+            'Final max cost': [],
+            'Final mean fidelity': [],
+            'Final mean cost': [],
+        }
+    )
+
+    date_filter = st.text_input('Filter date', key='date_filter')
+    
+    for file in file_names:
+
+        if date_filter != '' and date_filter in file:
+            with open(f'Results/{file}', 'rb') as f:
+                data = pickle.load(f)        
+
+                data_to_append = {
+                    'Experiment name': file,
+                    'Date created': data.exper_config.DateCreated,   
+                    'Elitism': data.exper_config.GeneticAlgorithmConfig.Elitism,
+                    'Mutation rate': data.exper_config.GeneticAlgorithmConfig.MutationRate,
+                    'Mutation sigma': data.exper_config.GeneticAlgorithmConfig.MutationSigma,
+                    'Weight': data.exper_config.GeneticAlgorithmConfig.Weight,
+                    'Final max fidelity': data.exper_config.FidelityHistory.Max[-1],
+                    'Final cost': data.exper_config.CostHistory.Max[-1],
+                    'Final mean fidelity': data.exper_config.FidelityHistory.Mean[-1],
+                    'Final mean cost': data.exper_config.CostHistory.Mean[-1],
+                }
+
+                df_to_append = pd.DataFrame([data_to_append])
+                df = pd.concat([df, df_to_append], ignore_index=True)
+
+        if date_filter == '':
+            with open(f'Results/{file}', 'rb') as f:
+                data = pickle.load(f)
+
+                data_to_append = {
+                    'Experiment name': file,
+                    'Date created': data.exper_config.DateCreated,   
+                    'Elitism': data.exper_config.GeneticAlgorithmConfig.Elitism,
+                    'Mutation rate': data.exper_config.GeneticAlgorithmConfig.MutationRate,
+                    'Mutation sigma': data.exper_config.GeneticAlgorithmConfig.MutationSigma,
+                    'Weight': data.exper_config.GeneticAlgorithmConfig.Weight,
+                    'Final max fidelity': data.exper_config.FidelityHistory.Max[-1],
+                    'Final cost': data.exper_config.CostHistory.Max[-1],
+                    'Final mean fidelity': data.exper_config.FidelityHistory.Mean[-1],
+                    'Final mean cost': data.exper_config.CostHistory.Mean[-1],
+                }
+
+                df_to_append = pd.DataFrame([data_to_append])
+                df = pd.concat([df, df_to_append], ignore_index=True)
+
+
+    st.dataframe(df)
+
 
     
