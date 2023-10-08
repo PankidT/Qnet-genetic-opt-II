@@ -224,6 +224,8 @@ class ExperimentResult:
         fig.tight_layout()  # otherwise the right y-label is slightly clipped
         ax[1, 1].legend()
 
+        print(f'Experiment Name: {self.name}')        
+
 def read_config(filename):
     with open(f'configs/{filename}', 'r') as f:
         config = json.load(f)
