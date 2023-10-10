@@ -9,7 +9,7 @@ st.set_page_config(layout="wide")
 st.title('Qnet-genetic-opt Streamlit App')
 st.write("This is app for visualizing the results of Qnet-genetic-opt")
 
-tab1, tab2 = st.tabs(["Single Experiment", "Dataframe"])
+tab1, tab2, tab3 = st.tabs(["Single Experiment", "Dataframe", "Overall graph"])
 
 def clear_multi():
     st.session_state.multiselect = []
@@ -21,15 +21,7 @@ file_names = [file for file in file_names if os.path.isfile(os.path.join(path, f
 
 with tab1:
 
-    # graph_type = [
-    #     'Fidelity & Cost via generations',
-    #     'Fidelity via Cost',
-    #     'Evolutional of Fidelity ',
-    #     'Evolutional of Cost'
-    # ]    
-
-    files = st.multiselect('Select your experiment', file_names)
-    # print(f'file: {files}')
+    files = st.multiselect('Select your experiment', file_names)    
 
     pickled_data = []
     for file in files:
@@ -45,7 +37,9 @@ with tab1:
         
 
         if config_show:        
-            col0.header('Experiment configuration')
+            col0.subheader('Experiment configuration')
+            col0.write(f'{data.exper_config.ExperimentName}')
+
             col1.subheader('Quantum configuration')
             col1.write(f'{data.exper_config.QuantumNetworkSimulationConfig.NumHops} hops')
             col1.write(f'{data.exper_config.QuantumNetworkSimulationConfig.NetworkGeneration} network generation')
@@ -59,73 +53,78 @@ with tab1:
             col2.write(f'Weight: {data.exper_config.GeneticAlgorithmConfig.Weight}')
             col2.text("")
 
-        select = st.multiselect('Set your experiment visualization', ['Raw data', 'Graph'], key='multiselect', default=['Graph'])
         # st.session_state
-        st.button('Clear', on_click=clear_multi)    
+        # st.button('Clear', on_click=clear_multi)    
 
-        if 'Raw data' in select:
-            st.write('This is the raw data of your experiment')
-            # st.write(df)
+        col1, col2 = st.columns(2)
 
-        if 'Graph' in select:
+        col1.subheader('Fidelity & Cost via generations')
+        
+        x = np.arange(0, len(data.exper_config.FidelityHistory.Max), 1)
+        weight = data.exper_config.GeneticAlgorithmConfig.Weight
+        objective_fidelity = data.exper_config.GeneticAlgorithmConfig.ObjectiveFidelity
+        mutation_rate = data.exper_config.GeneticAlgorithmConfig.MutationRate
+        num_population = data.exper_config.GeneticAlgorithmConfig.PopulationSize
 
-            col1, col2 = st.columns(2)
+        fig, ax = plt.subplots(1, figsize=(15,10))
+        ax_2 = ax.twinx()
 
-            col1.subheader('Fidelity & Cost via generations')
-            
-            x = np.arange(0, len(data.exper_config.FidelityHistory.Max), 1)
-            weight = data.exper_config.GeneticAlgorithmConfig.Weight
-            objective_fidelity = data.exper_config.GeneticAlgorithmConfig.ObjectiveFidelity
-            mutation_rate = data.exper_config.GeneticAlgorithmConfig.MutationRate
-            num_population = data.exper_config.GeneticAlgorithmConfig.PopulationSize
+        ax.set_title(f'w: {weight}, mr: {mutation_rate}, pop: {num_population}', loc='right')
+        ax.set_xlabel('Generation')
+        ax.set_ylabel('Fidelity')
+        ax_2.set_ylabel('Cost')
 
-            fig, ax = plt.subplots(1, figsize=(15,10))
-            ax_2 = ax.twinx()
+        ax.plot(x, data.exper_config.FidelityHistory.Mean, label='Fidelity', color='tab:blue')
+        ax_2.plot(x, data.exper_config.CostHistory.Mean, label='Cost', color='tab:red')
 
-            ax.set_title(f'w: {weight}, mr: {mutation_rate}, pop: {num_population}', loc='right')
-            ax.set_xlabel('Generation')
-            ax.set_ylabel('Fidelity')
-            ax_2.set_ylabel('Cost')
+        ax.legend(loc='upper left')
+        ax_2.legend(loc='upper right')
 
-            ax.plot(x, data.exper_config.FidelityHistory.Mean, label='Fidelity', color='tab:blue')
-            ax_2.plot(x, data.exper_config.CostHistory.Mean, label='Cost', color='tab:red')
+        col1.pyplot(fig)
 
-            ax.legend(loc='upper left')
-            ax_2.legend(loc='upper right')
+        # - - - - - - - - - - - - - - - - -
 
-            col1.pyplot(fig)
+        col2.subheader('Fidelity via Cost')
+        col2.scatter_chart(pd.DataFrame(
+            {'Fidelity': data.exper_config.FidelityHistory.Mean, 
+            'Cost': data.exper_config.CostHistory.Mean,                             
+            }),
+            x='Fidelity',
+            y='Cost')             
+        
+        # - - - - - - - - - - - - - - - - -
 
-            # - - - - - - - - - - - - - - - - -
+        col1.subheader('Evolutional of Fidelity')
+        data_fidelity = pd.DataFrame(
+            {'Max': data.exper_config.FidelityHistory.Max, 
+            'Min': data.exper_config.FidelityHistory.Min, 
+            'Mean': data.exper_config.FidelityHistory.Mean,                             
+            }
+        )
+        col1.line_chart(data=data_fidelity)
+        
+        # - - - - - - - - - - - - - - - - -
 
-            col2.subheader('Fidelity via Cost')
-            col2.scatter_chart(pd.DataFrame(
-                {'Fidelity': data.exper_config.FidelityHistory.Mean, 
-                'Cost': data.exper_config.CostHistory.Mean,                             
-                }),
-                x='Fidelity',
-                y='Cost')             
-            
-            # - - - - - - - - - - - - - - - - -
+        col2.subheader('Evolutional of Cost')
+        data_cost = pd.DataFrame(
+            {            
+                'Max': data.exper_config.CostHistory.Max,   
+            'Min': data.exper_config.CostHistory.Min,       
+            'Mean': data.exper_config.CostHistory.Mean,                         
+            }
+        )
+        col2.line_chart(data=data_cost)
 
-            col2.subheader('Evolutional of Fidelity')
-            data = pd.DataFrame(
-                {'Max': data.exper_config.FidelityHistory.Max, 
-                'Min': data.exper_config.FidelityHistory.Min, 
-                'Mean': data.exper_config.FidelityHistory.Mean,                             
-                }
-            )
-            col2.line_chart(data=data)
-            
-            # - - - - - - - - - - - - - - - - -
+        # - - - - - - - - - - - - - - - - -
 
-            # st.subheader('Evolutional of Cost')
-            # data = pd.DataFrame(
-            #     {'Max': data.exper_config.CostHistory.Max, 
-            #      'Min': data.exper_config.CostHistory.Min, 
-            #      'Mean': data.exper_config.CostHistory.Mean,                             
-            #     }
-            # )
-            # st.line_chart(data=data)
+        # st.subheader('Evolutional of Cost')
+        # data = pd.DataFrame(
+        #     {'Max': data.exper_config.CostHistory.Max, 
+        #      'Min': data.exper_config.CostHistory.Min, 
+        #      'Mean': data.exper_config.CostHistory.Mean,                             
+        #     }
+        # )
+        # st.line_chart(data=data)
 
 with tab2:
     st.write('This is the dataframe of your experiment')
@@ -194,5 +193,72 @@ with tab2:
 
     st.dataframe(df)
 
+with tab3:
+    path = 'Results/'
+    file_names = os.listdir(path)
+    files = st.multiselect('Select your experiment', file_names, key='multiselect', default=file_names)
+    pickled_data = []
+    for file in files:
+        with open(f'Results/{file}', 'rb') as f:
+            pickled_data.append(pickle.load(f))    
 
-    
+    selected_graph = st.multiselect('Select graph', ['Fidelity & Cost via generations', 'Fidelity via Cost', 'Evolutional of Fidelity', 'Evolutional of Cost'], key='multiselect_graph', default=['Fidelity & Cost via generations', 'Fidelity via Cost', 'Evolutional of Fidelity', 'Evolutional of Cost'])
+
+    for data in pickled_data:
+        # st.write(f'file: {data.exper_config.ExperimentName}')
+        col1, col2, col3, col4 = st.columns(4)
+
+        if 'Fidelity & Cost via generations' in selected_graph:
+            col1.subheader('Fidelity & Cost via generations')
+            
+            x = np.arange(0, len(data.exper_config.FidelityHistory.Max), 1)
+            weight = data.exper_config.GeneticAlgorithmConfig.Weight
+            objective_fidelity = data.exper_config.GeneticAlgorithmConfig.ObjectiveFidelity
+            mutation_rate = data.exper_config.GeneticAlgorithmConfig.MutationRate
+            num_population = data.exper_config.GeneticAlgorithmConfig.PopulationSize
+
+            fig, ax = plt.subplots(1, figsize=(15,10))
+            ax_2 = ax.twinx()
+
+            ax.set_title(f'w: {weight}, mr: {mutation_rate}, pop: {num_population}', loc='right')
+            ax.set_xlabel('Generation')
+            ax.set_ylabel('Fidelity')
+            ax_2.set_ylabel('Cost')
+
+            ax.plot(x, data.exper_config.FidelityHistory.Mean, label='Fidelity', color='tab:blue')
+            ax_2.plot(x, data.exper_config.CostHistory.Mean, label='Cost', color='tab:red')
+
+            ax.legend(loc='upper left')
+            ax_2.legend(loc='upper right')
+
+            col1.pyplot(fig)
+
+        if 'Fidelity via Cost' in selected_graph:
+            col2.subheader('Fidelity via Cost')
+            col2.scatter_chart(pd.DataFrame(
+                {'Fidelity': data.exper_config.FidelityHistory.Mean, 
+                'Cost': data.exper_config.CostHistory.Mean,                             
+                }),
+                x='Fidelity',
+                y='Cost')
+        
+        if 'Evolutional of Fidelity' in selected_graph:
+            col3.subheader('Evolutional of Fidelity')
+            data_fidelity = pd.DataFrame(
+                {'Max': data.exper_config.FidelityHistory.Max, 
+                'Min': data.exper_config.FidelityHistory.Min, 
+                'Mean': data.exper_config.FidelityHistory.Mean,                             
+                }
+            )
+            col3.line_chart(data=data_fidelity)
+
+        if 'Evolutional of Cost' in selected_graph:
+            col4.subheader('Evolutional of Cost')
+            data_cost = pd.DataFrame(
+                {            
+                    'Max': data.exper_config.CostHistory.Max,   
+                'Min': data.exper_config.CostHistory.Min,       
+                'Mean': data.exper_config.CostHistory.Mean,                         
+                }
+            )
+            col4.line_chart(data=data_cost)
