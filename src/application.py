@@ -4,12 +4,16 @@ import pickle
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import hiplot as hip
+import json
+from streamlit import runtime
+runtime.exists()
 
 st.set_page_config(layout="wide")
 st.title('Qnet-genetic-opt Streamlit App')
 st.write("This is app for visualizing the results of Qnet-genetic-opt")
 
-tab1, tab2, tab3 = st.tabs(["Single Experiment", "Dataframe", "Overall graph"])
+tab1, tab2, tab3, tab4 = st.tabs(["Single Experiment", "Dataframe", "Overall graph", "HiPlot"])
 
 def clear_multi():
     st.session_state.multiselect = []
@@ -194,8 +198,8 @@ with tab2:
     st.dataframe(df)
 
 with tab3:
-    path = 'Results/'
-    file_names = os.listdir(path)
+    # path = 'Results/'
+    # file_names = os.listdir(path)
     files = st.multiselect('Select your experiment', file_names, key='multiselect', default=file_names)
     pickled_data = []
     for file in files:
@@ -262,3 +266,27 @@ with tab3:
                 }
             )
             col4.line_chart(data=data_cost)
+
+with tab4:
+    file = st.selectbox('Select your experiment', file_names)
+    with open(f'Results/{file}', 'rb') as f:
+        data = pickle.load(f)
+
+    st.write(f'file: {data.exper_config.ExperimentName}')    
+
+    hiplot_data = [
+        {
+            'Loss': data.exper_config.ParameterHistory.Loss[-1][i], 
+            'GateErr': data.exper_config.ParameterHistory.GateError[-1][i],
+            'MeasurementErr': data.exper_config.ParameterHistory.MeasurementError[-1][i],
+            'MemoryTime': data.exper_config.ParameterHistory.MemoryTime[-1][i],
+            'Fidelity': data.exper_config.FidelityHistory.All[-1][i],
+            'Cost': data.exper_config.CostHistory.All[-1][i],
+        } for i in range(data.exper_config.GeneticAlgorithmConfig.PopulationSize)
+    ]
+    st.json(hiplot_data)
+    # xp = hip.Experiment.from_iterable(hiplot_data).display_st(key='hiplot')
+    # ret_val = xp.to_streamlit(ret="selected_uids", key="hip").display()
+
+    # st.markdown("hiplot returned " + json.dumps(ret_val))
+

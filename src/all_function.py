@@ -81,12 +81,14 @@ class ExperimentConfig:
         Max: list
         Mean: list
         Min: list
+        All: list
 
     @dataclass
     class CostHistory:
         Max: list
         Mean: list
         Min: list
+        All: list
 
     ExperimentName: str
     DateCreated: str
@@ -129,12 +131,14 @@ class ExperimentResult:
             FidelityHistory=ExperimentConfig.FidelityHistory(
                 Max=[],
                 Mean=[],
-                Min=[]
+                Min=[],
+                All=[]
             ),
             CostHistory=ExperimentConfig.CostHistory(
                 Max=[],
                 Mean=[],
-                Min=[]
+                Min=[],
+                All=[]
             )
         )
 
@@ -154,10 +158,20 @@ class ExperimentResult:
         with open(f'Results/{file_name}', 'wb') as f:
             pickle.dump(self, f)
 
+    def save_parameter_history(self, parameter_set: ExperimentConfig.ParameterHistory):
+
+        self.exper_config.ParameterHistory.Loss.append(parameter_set.Loss)
+        self.exper_config.ParameterHistory.MemoryTime.append(parameter_set.MemoryTime)
+        self.exper_config.ParameterHistory.GateError.append(parameter_set.GateError)
+        self.exper_config.ParameterHistory.MeasurementError.append(parameter_set.MeasurementError)        
+
     def save_data(self, cost, fidelity):
         # self.exper_config.ParameterHistory.Loss.append(self.ga_object.population[0].genotype[0])
 
         assert len(cost) == len(fidelity)
+
+        self.exper_config.FidelityHistory.All.append(fidelity)
+        self.exper_config.CostHistory.All.append(cost)
         
         self.exper_config.FidelityHistory.Max.append(max(fidelity))
         self.exper_config.FidelityHistory.Mean.append(np.mean(fidelity))

@@ -6,6 +6,13 @@ from tqdm import tqdm
 import multiprocessing
 import os
 
+@dataclass
+class ParameterHistory:
+    Loss: list
+    GateError: list
+    MeasurementError: list
+    MemoryTime: list
+
 def main_process(
         experiment_name,
         elitism,
@@ -41,13 +48,14 @@ def main_process(
 
     for step in tqdm(range(amount_optimization_steps)):
         
-        fidelity_history = []
+        fidelity_history = []      
+        parameter = ParameterHistory(Loss=[], GateError=[], MeasurementError=[], MemoryTime=[])  
 
         # this loop is feed all ind to simulator
         for ind in ga.population:
         # define Qwanta simulation class
             sim_ind = paramsTransform(ind)
-            # print(f'simulation with parameter set: {sim_ind}')
+            # print(f'simulation with parameter set: {sim_ind}')            
             qwan_sim = QwantaSimulation(
                 parameter_set = sim_ind, 
                 num_hops = num_hops, 
@@ -57,6 +65,15 @@ def main_process(
             simulate = qwan_sim.execute()
             simulate_fidelity = simulate[QnetGeneration]['fidelity']            
             fidelity_history.append(simulate_fidelity)
+
+            # collect parameter history in each step
+            parameter.Loss.append(sim_ind.genotype[0])
+            parameter.GateError.append(sim_ind.genotype[1])
+            parameter.MeasurementError.append(sim_ind.genotype[2])
+            parameter.MemoryTime.append(sim_ind.genotype[3])
+
+        # save parameter history in each generation
+        result.save_parameter_history(parameter_set=parameter)
         
         qwan_sim.collect_fidelity_history(fidelity_history)
 
