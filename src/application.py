@@ -94,7 +94,7 @@ with tab1:
             'Cost': data.exper_config.CostHistory.Mean,                             
             }),
             x='Fidelity',
-            y='Cost')             
+            y='Cost')        
         
         # - - - - - - - - - - - - - - - - -
 
@@ -214,6 +214,7 @@ with tab3:
 
         if 'Fidelity & Cost via generations' in selected_graph:
             col1.subheader('Fidelity & Cost via generations')
+            col1.write(f'file: {data.exper_config.ExperimentName}')
             
             x = np.arange(0, len(data.exper_config.FidelityHistory.Max), 1)
             weight = data.exper_config.GeneticAlgorithmConfig.Weight
