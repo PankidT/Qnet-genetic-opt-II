@@ -23,6 +23,10 @@ def main_process(
         weight,
         objective_fidelity,
         num_hops,
+        loss_max,
+        coherence_max,
+        gateErr_max,
+        meaErr_max,
         excel_file = "exper_id3_selectedStats_2hops.xlsx",
         QnetGeneration = "0G",        
     ):    
@@ -40,9 +44,10 @@ def main_process(
         mutationRate = mutation_rate,
         numIndividual = population_size,
         parent_size = int(population_size*elitism),
-        numGeneration = amount_optimization_steps,  
+        numGeneration = amount_optimization_steps,          
         QnetGeneration = QnetGeneration,
         num_hops = num_hops,
+        parameterMax= (loss_max, coherence_max, gateErr_max, meaErr_max)
     )
     print(decorated_prompt)
 
@@ -53,8 +58,8 @@ def main_process(
 
         # this loop is feed all ind to simulator
         for ind in ga.population:
-        # define Qwanta simulation class
-            sim_ind = paramsTransform(ind)
+        # define Qwanta simulation class            
+            sim_ind = paramsTransform(ind, loss_max[0], coherence_max[0], gateErr_max[0], meaErr_max[0]) # use [0] because loss_max is tuple
             # print(f'simulation with parameter set: {sim_ind}')            
             qwan_sim = QwantaSimulation(
                 parameter_set = sim_ind, 
@@ -98,6 +103,10 @@ def process_config(config_file_name):
     weight = config['weight']
     objective_fidelity = config['objective_fidelity']
     num_hops = config['num_hops']
+    loss_max = config['loss_max'],
+    coherence_max = config['coherence_max'],
+    gateErr_max = config['gateErr_max'],
+    meaErr_max = config['meaErr_max'],
     excel_file = config['excel_file']
     QnetGeneration = config['QnetGeneration']
 
@@ -111,8 +120,12 @@ def process_config(config_file_name):
         weight = weight,    
         objective_fidelity = objective_fidelity,
         num_hops = num_hops,
+        loss_max = loss_max,
+        coherence_max = coherence_max,
+        gateErr_max = gateErr_max,
+        meaErr_max = meaErr_max,
         excel_file = excel_file,
-        QnetGeneration = QnetGeneration
+        QnetGeneration = QnetGeneration,        
     )
 
 if __name__ == "__main__":

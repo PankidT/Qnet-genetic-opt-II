@@ -14,14 +14,14 @@ class Individual:
     genotype: np.ndarray
     cost: float = None
 
-def parameterTransform(loss, coherenceTime, gateErr, meaErr):
+def parameterTransform(loss, coherenceTime, gateErr, meaErr, maxLoss, maxCoherenceTime, maxGateErr, maxMeaErr):
     '''
     This function change the [0-1] value into real simulation value
 
     # value from Bsc_Thesis
-    meaErr: 0.01, 0.03, 0.05
+    meaErr: 0.01, 0.03, 0.05 %
     memoryTime: 0.25, 0.5, 1 second
-    gate error 0.01, 0.03
+    gate error 0.01, 0.03 %
     loss: 0.001, 0.003, 0.005, 0.007 dB/km
 
     # plan to normalize value in interval of previous research
@@ -32,10 +32,10 @@ def parameterTransform(loss, coherenceTime, gateErr, meaErr):
 
     '''
 
-    lossSim = 0.010 - loss*0.010 # loss sim interval [0, 0.01], 0-> 0.01, 1->0
-    coherenceTimeSim = coherenceTime
-    gateErrSim = 0.03 - gateErr*0.03
-    meaErrSim = 0.1 - meaErr*0.1
+    lossSim = maxLoss*(1 - loss) # loss sim interval [0, 0.01], 0-> 0.01, 1->0
+    coherenceTimeSim = coherenceTime*maxCoherenceTime
+    gateErrSim = maxGateErr*(1 - gateErr)
+    meaErrSim = maxMeaErr*(1 - meaErr)
 
     # prevent 0 value for coherence time
     if coherenceTimeSim == 0:
@@ -43,12 +43,12 @@ def parameterTransform(loss, coherenceTime, gateErr, meaErr):
 
     return lossSim, coherenceTimeSim, gateErrSim, meaErrSim
 
-def paramsTransform(chomosome: Individual):
+def paramsTransform(chomosome: Individual, maxLoss: float, maxCoherenceTime: float, maxGateErr: float, maxMeaErr: float):
     '''
     This function transform the chromosome into parameter set for simulation
     '''
     loss, coherenceTime, gateErr, meaErr = chomosome.genotype
-    lossSim, coherenceTimeSim, gateErrSim, meaErrSim = parameterTransform(loss, coherenceTime, gateErr, meaErr)
+    lossSim, coherenceTimeSim, gateErrSim, meaErrSim = parameterTransform(loss, coherenceTime, gateErr, meaErr, maxLoss, maxCoherenceTime, maxGateErr, maxMeaErr)
     return Individual(genotype=np.array([lossSim, coherenceTimeSim, gateErrSim, meaErrSim]), cost=chomosome.cost)
 
 @dataclass
@@ -245,7 +245,7 @@ def read_config(filename):
         config = json.load(f)
     return config
 
-def decorate_prompt(prompt, experiment_name, weight, mutationRate, numIndividual, parent_size, numGeneration, QnetGeneration, num_hops):
+def decorate_prompt(prompt, experiment_name, weight, mutationRate, numIndividual, parent_size, numGeneration, QnetGeneration, num_hops, parameterMax):
     decorated_prompt = f"+{'=' * 58}+\n"
     decorated_prompt += f"| {prompt}\n"
     decorated_prompt += f"+{'=' * 58}+\n"
@@ -261,5 +261,9 @@ def decorate_prompt(prompt, experiment_name, weight, mutationRate, numIndividual
     decorated_prompt += f'| Number of Generations:     {numGeneration}\n'    
     decorated_prompt += f'| Strategy:                  {QnetGeneration}\n'
     decorated_prompt += f'| Number of Hops:            {num_hops}\n'
+    decorated_prompt += f'| Loss Max:                  {parameterMax[0][0]} ({parameterMax[0][0]*100} %)\n'
+    decorated_prompt += f'| Coherence Max:             {parameterMax[1][0]} second\n'
+    decorated_prompt += f'| Gate Error Max:            {parameterMax[2][0]} ({parameterMax[2][0]*100} %)\n'
+    decorated_prompt += f'| Measurement Error Max:     {parameterMax[3][0]} ({parameterMax[3][0]*100} %)\n'
     decorated_prompt += f'+{"-" * 58}+\n'
     return decorated_prompt
