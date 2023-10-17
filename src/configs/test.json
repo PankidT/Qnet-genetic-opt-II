@@ -13,5 +13,6 @@
   "gateErr_max": 0.03,
   "meaErr_max": 0.1,
   "excel_file": "exper_id3_selectedStats_2hops.xlsx",
-  "QnetGeneration": "0G"
+  "QnetGeneration": "0G",
+  "use_custom_node": "true"
 }

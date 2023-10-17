@@ -1,7 +1,17 @@
 import numpy as np
 from qwanta import Xperiment
-from all_function import Individual
+from all_function import Individual, convert_ll_to_xyz, Location
 import matplotlib.pyplot as plt
+
+x_bkk, y_bkk, z_bkk = convert_ll_to_xyz(Location(lat_deg=13, lat_min=45, lat_sec=52, lat_dir=9, lon_deg=100, lon_min=31, lon_sec=31, lon_dir=5))
+x_cm, y_cm, z_cm = convert_ll_to_xyz(Location(lat_deg=18, lat_min=56, lat_sec=8, lat_dir=7, lon_deg=98, lon_min=49, lon_sec=20, lon_dir=8))
+x_sk, y_sk, z_sk = convert_ll_to_xyz(Location(lat_deg=6, lat_min=51, lat_sec=8, lat_dir=5, lon_deg=100, lon_min=34, lon_sec=36, lon_dir=6))
+
+custom_node_info = {
+    'Node 0': {'coordinate': (x_cm, y_cm, z_cm)},
+    'Node 1': {'coordinate': (x_bkk, y_bkk, z_bkk)},
+    'Node 2': {'coordinate': (x_sk, y_sk, z_sk)},
+}
 
 class QwantaSimulation:
     """
@@ -13,14 +23,20 @@ class QwantaSimulation:
             parameter_set: Individual, 
             num_hops: int, 
             network_strategy: str,
-            network_generation: str ='0G',            
+            network_generation: str ='0G',
+            use_custom_node: str = "false"
         ):
         self.parameter_set = parameter_set
         self.depo_prob = 0
         self.network_generation = network_generation
         self.num_hops = num_hops
         self.num_nodes = self.num_hops + 1
-        self.node_info = {f'Node {i}': {'coordinate': (int(i*100), 0, 0)} for i in range(self.num_nodes)}
+
+        if use_custom_node == "false":
+            self.node_info = {f'Node {i}': {'coordinate': (int(i*100), 0, 0)} for i in range(self.num_nodes)}
+        else:
+            self.node_info = custom_node_info
+
         self.edge_info = {
                     (f'Node {i}', f'Node {i+1}'): {
                         'connection-type': 'Space',
@@ -64,6 +80,7 @@ class QwantaSimulation:
         
     def execute(self):
         results = self.exps.execute()
+        print(f'check node: {self.node_info}')
         # self.fidelity_history.append(results[self.network_generation]['fidelity'])
         # self.simulation_results = results
         return results

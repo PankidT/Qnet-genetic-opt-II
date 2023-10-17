@@ -5,6 +5,7 @@ import datetime
 import seaborn as sns
 import matplotlib.pyplot as plt
 import json
+import math
 
 @dataclass
 class Individual:
@@ -245,7 +246,7 @@ def read_config(filename):
         config = json.load(f)
     return config
 
-def decorate_prompt(prompt, experiment_name, weight, mutationRate, numIndividual, parent_size, numGeneration, QnetGeneration, num_hops, parameterMax):
+def decorate_prompt(prompt, experiment_name, weight, mutationRate, numIndividual, parent_size, numGeneration, QnetGeneration, num_hops, parameterMax, node_type):
     decorated_prompt = f"+{'=' * 58}+\n"
     decorated_prompt += f"| {prompt}\n"
     decorated_prompt += f"+{'=' * 58}+\n"
@@ -265,5 +266,58 @@ def decorate_prompt(prompt, experiment_name, weight, mutationRate, numIndividual
     decorated_prompt += f'| Coherence Max:             {parameterMax[1][0]} second\n'
     decorated_prompt += f'| Gate Error Max:            {parameterMax[2][0]} ({parameterMax[2][0]*100} %)\n'
     decorated_prompt += f'| Measurement Error Max:     {parameterMax[3][0]} ({parameterMax[3][0]*100} %)\n'
+    decorated_prompt += f'| Type of node:              {node_type}\n'
     decorated_prompt += f'+{"-" * 58}+\n'
     return decorated_prompt
+
+@dataclass
+class Location:
+    """Class for loss parameters"""
+    lat_deg: int
+    lat_min: int
+    lat_sec: float
+    lat_dir: str
+    lon_deg: int
+    lon_min: int
+    lon_sec: float
+    lon_dir: str
+
+# Function to convert degrees, minutes, and seconds to decimal degrees
+def dms_to_dd(degrees, minutes, seconds, direction):
+    dd = degrees + minutes/60 + seconds/3600
+    if direction in ['S', 'W']:
+        dd *= -1
+    return dd
+
+def convert_ll_to_xyz(node: Location):
+    lat_dd = dms_to_dd(node.lat_deg, node.lat_min, node.lat_sec, node.lat_dir)
+    lon_dd = dms_to_dd(node.lon_deg, node.lon_min, node.lon_sec, node.lon_dir)
+
+    # Earth radius in kilometers (mean radius)
+    earth_radius_km = 6371.0
+
+    # Convert to XYZ coordinates
+    x = earth_radius_km * math.cos(math.radians(lat_dd)) * math.cos(math.radians(lon_dd))
+    y = earth_radius_km * math.cos(math.radians(lat_dd)) * math.sin(math.radians(lon_dd))
+    z = earth_radius_km * math.sin(math.radians(lat_dd))
+
+    return x, y, z
+
+# def cal_relative_distance(node1: Location, node2: Location):
+
+#     lat_dd_1 = dms_to_dd(node1.lat_deg, node1.lat_min, node1.lat_sec, node1.lat_dir)
+#     lon_dd_1 = dms_to_dd(node1.lon_deg, node1.lon_min, node1.lon_sec, node1.lon_dir)
+#     lat_dd_2 = dms_to_dd(node2.lat_deg, node2.lat_min, node2.lat_sec, node2.lat_dir)
+#     lon_dd_2 = dms_to_dd(node2.lon_deg, node2.lon_min, node2.lon_sec, node2.lon_dir)
+
+#     earth_radius_km = 6371.0
+
+#     x_1 = earth_radius_km * math.cos(math.radians(lat_dd_1)) * math.cos(math.radians(lon_dd_1))
+#     y_1 = earth_radius_km * math.cos(math.radians(lat_dd_1)) * math.sin(math.radians(lon_dd_1))
+#     z_1 = earth_radius_km * math.sin(math.radians(lat_dd_1))
+    
+#     x_2 = earth_radius_km * math.cos(math.radians(lat_dd_2)) * math.cos(math.radians(lon_dd_2))
+#     y_2 = earth_radius_km * math.cos(math.radians(lat_dd_2)) * math.sin(math.radians(lon_dd_2))
+#     z_2 = earth_radius_km * math.sin(math.radians(lat_dd_2))
+
+#     return math.sqrt((x_1-x_2)**2 + (y_1-y_2)**2 + (z_1-z_2)**2)

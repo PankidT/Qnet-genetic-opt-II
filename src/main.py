@@ -28,7 +28,8 @@ def main_process(
         gateErr_max,
         meaErr_max,
         excel_file = "exper_id3_selectedStats_2hops.xlsx",
-        QnetGeneration = "0G",        
+        QnetGeneration = "0G",
+        use_custom_node = "false",
     ):    
 
     # Define ga object
@@ -47,7 +48,8 @@ def main_process(
         numGeneration = amount_optimization_steps,          
         QnetGeneration = QnetGeneration,
         num_hops = num_hops,
-        parameterMax= (loss_max, coherence_max, gateErr_max, meaErr_max)
+        parameterMax= (loss_max, coherence_max, gateErr_max, meaErr_max),
+        node_type= use_custom_node
     )
     print(decorated_prompt)
 
@@ -66,6 +68,7 @@ def main_process(
                 num_hops = num_hops, 
                 network_strategy=excel_file,
                 network_generation=QnetGeneration,
+                use_custom_node=use_custom_node
             )            
             simulate = qwan_sim.execute()
             simulate_fidelity = simulate[QnetGeneration]['fidelity']            
@@ -109,6 +112,7 @@ def process_config(config_file_name):
     meaErr_max = config['meaErr_max'],
     excel_file = config['excel_file']
     QnetGeneration = config['QnetGeneration']
+    use_custom_node = config['use_custom_node']
 
     main_process(
         experiment_name=experiment_name,
@@ -125,7 +129,8 @@ def process_config(config_file_name):
         gateErr_max = gateErr_max,
         meaErr_max = meaErr_max,
         excel_file = excel_file,
-        QnetGeneration = QnetGeneration,        
+        QnetGeneration = QnetGeneration,      
+        use_custom_node = use_custom_node  
     )
 
 if __name__ == "__main__":
