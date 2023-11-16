@@ -19,7 +19,9 @@ def clear_multi():
     st.session_state.multiselect = []
     return
 
-path = 'Results/'
+path = 'Results/Results_17_10_2023 (only default node)/'
+# path = 'Results/Results_20_10_2023 (custom node and increase loss)/'
+
 file_names = os.listdir(path)
 file_names = [file for file in file_names if os.path.isfile(os.path.join(path, file))]
 
@@ -29,7 +31,7 @@ with tab1:
 
     pickled_data = []
     for file in files:
-        with open(f'Results/{file}', 'rb') as f:
+        with open(f'{path+file}', 'rb') as f:
             pickled_data.append(pickle.load(f))
     # print(f'pickle: {pickled_data}')
 
@@ -155,7 +157,7 @@ with tab2:
     for file in file_names:
 
         if date_filter != '' and date_filter in file:
-            with open(f'Results/{file}', 'rb') as f:
+            with open(f'{path+file}', 'rb') as f:
                 data = pickle.load(f)        
 
                 data_to_append = {
@@ -175,7 +177,7 @@ with tab2:
                 df = pd.concat([df, df_to_append], ignore_index=True)
 
         if date_filter == '':
-            with open(f'Results/{file}', 'rb') as f:
+            with open(f'{path+file}', 'rb') as f:
                 data = pickle.load(f)
 
                 data_to_append = {
@@ -203,7 +205,7 @@ with tab3:
     files = st.multiselect('Select your experiment', file_names, key='multiselect', default=file_names)
     pickled_data = []
     for file in files:
-        with open(f'Results/{file}', 'rb') as f:
+        with open(f'{path+file}', 'rb') as f:
             pickled_data.append(pickle.load(f))    
 
     selected_graph = st.multiselect('Select graph', ['Fidelity & Cost via generations', 'Fidelity via Cost', 'Evolutional of Fidelity', 'Evolutional of Cost'], key='multiselect_graph', default=['Fidelity & Cost via generations', 'Fidelity via Cost', 'Evolutional of Fidelity', 'Evolutional of Cost'])
@@ -270,7 +272,7 @@ with tab3:
 
 with tab4:
     file = st.selectbox('Select your experiment', file_names)
-    with open(f'Results/{file}', 'rb') as f:
+    with open(f'{path+file}', 'rb') as f:
         data = pickle.load(f)
 
     st.write(f'file: {data.exper_config.ExperimentName}')    
