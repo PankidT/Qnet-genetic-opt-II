@@ -13,6 +13,9 @@ custom_node_info = {
     'Node 2': {'coordinate': (x_sk, y_sk, z_sk)},
 }
 
+def adjusted_rate(rl, dl, ds, loss=0.1):
+    return rl*10**((dl - ds)*loss/10)
+
 class QwantaSimulation:
     """
     Class for Qwanta simulation:

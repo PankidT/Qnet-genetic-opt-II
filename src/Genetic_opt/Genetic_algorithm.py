@@ -17,7 +17,10 @@ class GeneticAlgorithm:
                  mutation_rate:float=0.01,
                  mutation_sigma:float=0.1,
                  objective_F:float=0.7,
-                 weight:float=0.5,                
+                 objective_TP:float=4000,
+                 weight_f:float=0.5,
+                 weight_tp:float=0.5,
+                 weight_c:float=1,                
                  mutate_fn=None,
                  crossover_fn=None,                              
                  ):
@@ -37,8 +40,11 @@ class GeneticAlgorithm:
 
         # random baseline value shape equal dna_size and value between 0 and 1
         self.baseline_value = np.array([np.random.rand() for i in range(dna_size)])
-        self.w = weight
+        self.w_f = weight_f
+        self.w_tp = weight_tp
+        self.w_c = weight_c
         self.objective_F = objective_F
+        self.objective_TP = objective_TP
 
         self.min_cost_history = []
         self.avg_cost_history = []
@@ -102,7 +108,7 @@ class GeneticAlgorithm:
 
         return mutated_chromosome
     
-    def evole(self, simulate_F):
+    def evole(self, simulate_F, simulate_TP):
 
         """
         baseline_value: control parameter
@@ -117,7 +123,17 @@ class GeneticAlgorithm:
 
         # calculate cost for current population
         for individual in self.population:            
-            individual.cost = total_cost_fn(self.baseline_value, individual, self.w, simulate_F, self.objective_F)
+            individual.cost = total_cost_fn(
+                baseline_value=self.baseline_value, 
+                chromosome=individual, 
+                w1=self.w_f, 
+                w2=self.w_tp,
+                w3=self.w_c,
+                simulate_F=simulate_F,
+                simulate_TP=simulate_TP,
+                objective_F=self.objective_F,
+                objective_TP=self.objective_TP
+                )
 
         # collect cost in this population's generation before generate new population
         minimum_cost = np.min([individual.cost for individual in self.population])
@@ -134,8 +150,26 @@ class GeneticAlgorithm:
             offspring_2 = self.__mutate(offspring_2)
 
             # calcuate cost for new offspring            
-            offspring_1.cost = total_cost_fn(self.baseline_value, offspring_1, self.w, simulate_F, self.objective_F)
-            offspring_2.cost = total_cost_fn(self.baseline_value, offspring_2, self.w, simulate_F, self.objective_F)
+            offspring_1.cost = total_cost_fn(
+                baseline_value=self.baseline_value, 
+                chromosome=offspring_1, 
+                w1=self.w_f, 
+                w2=self.w_tp,
+                w3=self.w_c,
+                simulate_F=simulate_F, 
+                simulate_TP=simulate_TP,
+                objective_F=self.objective_F,
+                objective_TP=self.objective_TP)
+            offspring_2.cost = total_cost_fn(
+                baseline_value=self.baseline_value, 
+                chromosome=offspring_2, 
+                w1=self.w_f, 
+                w2=self.w_tp,
+                w3=self.w_c,
+                simulate_F=simulate_F, 
+                simulate_TP=simulate_TP,
+                objective_F=self.objective_F,
+                objective_TP=self.objective_TP)
 
             new_population.append(offspring_1)
             new_population.append(offspring_2)

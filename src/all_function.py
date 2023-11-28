@@ -68,7 +68,10 @@ class ExperimentConfig:
         MutationRate: float
         MutationSigma: float
         ObjectiveFidelity: float
-        Weight: float
+        ObjectiveThroughput: float
+        Weight_F: float
+        Weight_TP: float
+        Weight_C: float
 
     @dataclass
     class ParameterHistory:
@@ -79,6 +82,13 @@ class ExperimentConfig:
 
     @dataclass
     class FidelityHistory:
+        Max: list
+        Mean: list
+        Min: list
+        All: list
+
+    @dataclass
+    class ThroughtputHistory:
         Max: list
         Mean: list
         Min: list
@@ -97,6 +107,7 @@ class ExperimentConfig:
     GeneticAlgorithmConfig: GeneticAlgorithmConfig
     ParameterHistory: ParameterHistory
     FidelityHistory: FidelityHistory
+    ThroughtputHistory: ThroughtputHistory
     CostHistory: CostHistory
 
 class ExperimentResult:
@@ -121,7 +132,10 @@ class ExperimentResult:
                 MutationRate=self.ga_object.mutation_rate,
                 MutationSigma=self.ga_object.mutation_sigma,
                 ObjectiveFidelity=self.ga_object.objective_F,
-                Weight=self.ga_object.w,                
+                ObjectiveThroughput=self.ga_object.objective_TP,            
+                Weight_F=self.ga_object.w_f,
+                Weight_TP=self.ga_object.w_tp,
+                Weight_C=self.ga_object.w_c
             ),
             ParameterHistory=ExperimentConfig.ParameterHistory(
                 Loss=[],
@@ -135,6 +149,12 @@ class ExperimentResult:
                 Min=[],
                 All=[]
             ),
+            ThroughtputHistory=ExperimentConfig.ThroughtputHistory(
+                Max=[],
+                Mean=[],
+                Min=[],
+                All=[]
+            ),            
             CostHistory=ExperimentConfig.CostHistory(
                 Max=[],
                 Mean=[],
@@ -166,7 +186,7 @@ class ExperimentResult:
         self.exper_config.ParameterHistory.GateError.append(parameter_set.GateError)
         self.exper_config.ParameterHistory.MeasurementError.append(parameter_set.MeasurementError)        
 
-    def save_data(self, cost, fidelity):
+    def save_data(self, cost, fidelity, throughput):
         # self.exper_config.ParameterHistory.Loss.append(self.ga_object.population[0].genotype[0])
 
         assert len(cost) == len(fidelity)
@@ -177,6 +197,10 @@ class ExperimentResult:
         self.exper_config.FidelityHistory.Max.append(max(fidelity))
         self.exper_config.FidelityHistory.Mean.append(np.mean(fidelity))
         self.exper_config.FidelityHistory.Min.append(min(fidelity))
+        
+        self.exper_config.ThroughtputHistory.Max.append(max(throughput))
+        self.exper_config.ThroughtputHistory.Mean.append(np.mean(throughput))
+        self.exper_config.ThroughtputHistory.Min.append(min(throughput))
 
         self.exper_config.CostHistory.Max.append(max(cost))
         self.exper_config.CostHistory.Mean.append(np.mean(cost))
@@ -246,7 +270,7 @@ def read_config(filename):
         config = json.load(f)
     return config
 
-def decorate_prompt(prompt, experiment_name, weight, mutationRate, numIndividual, parent_size, numGeneration, QnetGeneration, num_hops, parameterMax, node_type):
+def decorate_prompt(prompt, experiment_name, weight_f, weight_tp, weight_c, mutationRate, numIndividual, parent_size, numGeneration, QnetGeneration, num_hops, parameterMax, node_type):
     decorated_prompt = f"+{'=' * 58}+\n"
     decorated_prompt += f"| {prompt}\n"
     decorated_prompt += f"+{'=' * 58}+\n"
@@ -255,7 +279,9 @@ def decorate_prompt(prompt, experiment_name, weight, mutationRate, numIndividual
     decorated_prompt += f'| Hyperparameters:\n'
     decorated_prompt += f'+{"-" * 58}+\n'
     decorated_prompt += f'| Experiment Name:           {experiment_name}\n'
-    decorated_prompt += f'| weight1 (Fidelity):        {weight}\n'    
+    decorated_prompt += f'| weight_f (Fidelity):        {weight_f}\n'  
+    decorated_prompt += f'| weight_tp (Throughput):     {weight_tp}\n'
+    decorated_prompt += f'| weight_c (Cost):            {weight_c}\n'
     decorated_prompt += f'| Mutation Rate:             {mutationRate}\n'    
     decorated_prompt += f'| Number of Individuals:     {numIndividual}\n'
     decorated_prompt += f'| Parent Size before Crossover: {parent_size}\n'

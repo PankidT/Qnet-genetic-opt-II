@@ -20,8 +20,11 @@ def main_process(
         mutation_rate,
         mutation_sigma,
         amount_optimization_steps,
-        weight,
+        weight_f,
+        weight_tp,
+        weight_c,
         objective_fidelity,
+        objective_throughput,
         num_hops,
         loss_max,
         coherence_max,
@@ -33,7 +36,11 @@ def main_process(
     ):    
 
     # Define ga object
-    ga = GeneticAlgorithm(dna_size = 4, elitism = elitism, population_size = population_size, mutation_rate = mutation_rate, mutation_sigma = mutation_sigma, objective_F=objective_fidelity, weight=weight)    
+    ga = GeneticAlgorithm(
+        dna_size = 4, elitism = elitism, population_size = population_size, 
+        mutation_rate = mutation_rate, mutation_sigma = mutation_sigma, 
+        objective_F=objective_fidelity, weight_f=weight_f, 
+        objective_TP=objective_throughput, weight_tp=weight_tp, weight_c=weight_c)    
 
     # Define result object for save data in simulation
     result = ExperimentResult(ga_object=ga, experiment_name=experiment_name, qnet_generation=QnetGeneration, num_hops=num_hops)
@@ -41,7 +48,9 @@ def main_process(
     decorated_prompt = decorate_prompt(
         prompt = "This is your Genetic simulation hyperparameter...",
         experiment_name = experiment_name,
-        weight = weight,        
+        weight_f = weight_f,
+        weight_tp = weight_tp,        
+        weight_c = weight_c,
         mutationRate = mutation_rate,
         numIndividual = population_size,
         parent_size = int(population_size*elitism),
@@ -55,7 +64,8 @@ def main_process(
 
     for step in tqdm(range(amount_optimization_steps)):
         
-        fidelity_history = []      
+        fidelity_history = []
+        throughput_history = []      
         parameter = ParameterHistory(Loss=[], GateError=[], MeasurementError=[], MemoryTime=[])  
 
         # this loop is feed all ind to simulator
@@ -70,9 +80,11 @@ def main_process(
                 network_generation=QnetGeneration,
                 use_custom_node=use_custom_node
             )            
-            simulate = qwan_sim.execute()
+            simulate = qwan_sim.execute() # result from simulator
             simulate_fidelity = simulate[QnetGeneration]['fidelity']            
             fidelity_history.append(simulate_fidelity)
+            throughput = 9000/(simulate['0G']['Time used'] + simulate['0G']['Fidelity Estimation Time'])
+            throughput_history.append(throughput)
 
             # collect parameter history in each step
             parameter.Loss.append(sim_ind.genotype[0])
@@ -86,11 +98,11 @@ def main_process(
         qwan_sim.collect_fidelity_history(fidelity_history)
 
         # collect cost and replace old population with new population
-        cost = ga.evole(simulate_F=simulate_fidelity)
+        cost = ga.evole(simulate_F=simulate_fidelity, simulate_TP=throughput)
         # print(f'cost: {cost}')
 
         # save data in each step
-        result.save_data(cost=cost, fidelity=fidelity_history)
+        result.save_data(cost=cost, fidelity=fidelity_history, throughput=throughput_history)
 
     result.save_experiment(file_name=experiment_name, ga_object=ga)
 
@@ -103,8 +115,11 @@ def process_config(config_file_name):
     mutation_rate = config['mutation_rate']
     mutation_sigma = config['mutation_sigma']
     amount_optimization_steps = config['amount_optimization_steps']
-    weight = config['weight']
+    weight_f = config['weight_f']
+    weight_tp = config['weight_tp']
+    weight_c = config['weight_c']
     objective_fidelity = config['objective_fidelity']
+    objective_throughput = config['objective_throughput']
     num_hops = config['num_hops']
     loss_max = config['loss_max'],
     coherence_max = config['coherence_max'],
@@ -121,8 +136,11 @@ def process_config(config_file_name):
         mutation_rate = mutation_rate,
         mutation_sigma = mutation_sigma,        
         amount_optimization_steps = amount_optimization_steps,                
-        weight = weight,    
+        weight_f = weight_f,
+        weight_tp = weight_tp,
+        weight_c = weight_c,
         objective_fidelity = objective_fidelity,
+        objective_throughput = objective_throughput,
         num_hops = num_hops,
         loss_max = loss_max,
         coherence_max = coherence_max,
