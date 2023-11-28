@@ -206,17 +206,47 @@ class ExperimentResult:
         self.exper_config.CostHistory.Mean.append(np.mean(cost))
         self.exper_config.CostHistory.Min.append(min(cost))
 
+    def plot_pareto_frontier(self, Xs, Ys, maxX=True, maxY=True, fig=None, ax=None):
+        '''Pareto frontier selection process'''
+        sorted_list = sorted([[Xs[i], Ys[i]] for i in range(len(Xs))], reverse=maxY)
+        pareto_front = [sorted_list[0]]
+        for pair in sorted_list[1:]:
+            if maxY:
+                if pair[1] >= pareto_front[-1][1]:
+                    pareto_front.append(pair)
+            else:
+                if pair[1] <= pareto_front[-1][1]:
+                    pareto_front.append(pair)            
+        
+        '''Plotting process'''
+        if fig is None or ax is None:
+            fig, ax = plt.subplots()
+
+        ax.scatter(Xs, Ys, label='Data')
+        pf_X = [pair[0] for pair in pareto_front]
+        pf_Y = [pair[1] for pair in pareto_front]
+        ax.plot(pf_X, pf_Y, 'x-', color='red', label='Optimal Pareto')
+        ax.set_xlabel("1 - Fidelity")
+        ax.set_ylabel("Cost")
+        ax.set_title("Pareto frontier")
+        ax.legend(loc="upper right", fontsize=13)
+        plt.show()
+
+        return pf_X, pf_Y, fig, ax
+
     def plot(self):
         sns.set_theme(style="darkgrid")
 
         x = np.arange(0, len(self.exper_config.FidelityHistory.Max), 1)
-        weight = self.exper_config.GeneticAlgorithmConfig.Weight
+        weight_f = self.exper_config.GeneticAlgorithmConfig.Weight_F
+        weight_tp = self.exper_config.GeneticAlgorithmConfig.Weight_TP
+        weight_c = self.exper_config.GeneticAlgorithmConfig.Weight_C
         objective_fidelity = self.exper_config.GeneticAlgorithmConfig.ObjectiveFidelity
         mutation_rate = self.exper_config.GeneticAlgorithmConfig.MutationRate
         num_population = self.exper_config.GeneticAlgorithmConfig.PopulationSize
 
-        fig, ax = plt.subplots(2, 2)
-        ax[0, 0].set_title(f'w: {weight}, mr: {mutation_rate}, pop: {num_population}', loc='right')
+        fig, ax = plt.subplots(3, 2)
+        ax[0, 0].set_title(f'w: {weight_f}, mr: {mutation_rate}, pop: {num_population}', loc='right')
 
         color = 'tab:red'
         ax[0, 0].set_xlabel('generation')
@@ -262,6 +292,25 @@ class ExperimentResult:
 
         fig.tight_layout()  # otherwise the right y-label is slightly clipped
         ax[1, 1].legend()
+
+        ax[2, 0].set_title('Throughput of each generation')
+        ax[2, 0].set_xlabel('generation')
+        ax[2, 0].set_ylabel('throughput')
+        ax[2, 0].plot(x, self.exper_config.ThroughtputHistory.Max, label='max throughput', color='tab:red')
+        ax[2, 0].plot(x, self.exper_config.ThroughtputHistory.Min, label='min throughput', color='tab:green')
+        ax[2, 0].plot(x, self.exper_config.ThroughtputHistory.Mean, label='mean throughput', color='tab:blue')
+        ax[2, 0].fill_between(x, self.exper_config.ThroughtputHistory.Max, self.exper_config.ThroughtputHistory.Min, alpha=0.2, label='range throughput')
+        ax[2, 0].legend()
+
+        ax[2, 1].set_title('Final Generation Pareto Fronteir')
+        inverse_fidelity = []
+        for data_point in self.exper_config.FidelityHistory.All[-1]:
+            inv_F = 1 - data_point
+            inverse_fidelity.append(inv_F)
+
+        pX, pY, fig, ax[2, 1] = self.plot_pareto_frontier(inverse_fidelity, self.exper_config.CostHistory.All[-1], maxX=False, maxY=False, fig=fig, ax=ax[2, 1])
+        fig.tight_layout()
+        plt.show()
 
         print(f'Experiment Name: {self.name}')        
 

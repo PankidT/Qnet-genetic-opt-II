@@ -19,6 +19,7 @@ def clear_multi():
     st.session_state.multiselect = []
     return
 
+# path = 'Results/'
 path = 'Results/Results_17_10_2023 (only default node)/'
 # path = 'Results/Results_20_10_2023 (custom node and increase loss)/'
 
@@ -182,7 +183,7 @@ with tab2:
 
                 data_to_append = {
                     'Experiment name': file,
-                    'Date created': data.exper_config.DateCreated,   
+                    'Date created': data.exper_config.DateCreated,
                     'Elitism': data.exper_config.GeneticAlgorithmConfig.Elitism,
                     'Mutation rate': data.exper_config.GeneticAlgorithmConfig.MutationRate,
                     'Mutation sigma': data.exper_config.GeneticAlgorithmConfig.MutationSigma,
