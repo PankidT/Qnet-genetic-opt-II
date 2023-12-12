@@ -1,0 +1,21 @@
+{
+    "experiment_name": "test_experiment",
+    "elitism": 0.2,
+    "population_size": 10,
+    "mutation_rate": 0.3,
+    "mutation_sigma": 0.3,
+    "amount_optimization_steps": 5,
+    "weight_f": 0.5,
+    "weight_tp": 0.5,
+    "weight_c": 0.5,
+    "objective_fidelity": 0.7,
+    "objective_throughput": 4000,
+    "num_hops": 2,
+    "loss_max": 0.01,
+    "coherence_max": 1,
+    "gateErr_max": 0.03,
+    "meaErr_max": 0.1,
+    "excel_file": "exper_id3_selectedStats_2hops.xlsx",
+    "QnetGeneration": "0G",
+    "use_custom_node": "true"
+}

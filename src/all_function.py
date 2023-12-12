@@ -189,19 +189,19 @@ class ExperimentResult:
     def save_data(self, cost, fidelity, throughput):
         # self.exper_config.ParameterHistory.Loss.append(self.ga_object.population[0].genotype[0])
 
-        assert len(cost) == len(fidelity)
+        assert len(cost) == len(fidelity) == len(throughput), "Length of cost, fidelity, and throughput must be the same"
 
         self.exper_config.FidelityHistory.All.append(fidelity)
-        self.exper_config.CostHistory.All.append(cost)
-        
         self.exper_config.FidelityHistory.Max.append(max(fidelity))
         self.exper_config.FidelityHistory.Mean.append(np.mean(fidelity))
         self.exper_config.FidelityHistory.Min.append(min(fidelity))
         
+        self.exper_config.ThroughtputHistory.All.append(throughput)
         self.exper_config.ThroughtputHistory.Max.append(max(throughput))
         self.exper_config.ThroughtputHistory.Mean.append(np.mean(throughput))
         self.exper_config.ThroughtputHistory.Min.append(min(throughput))
 
+        self.exper_config.CostHistory.All.append(cost)
         self.exper_config.CostHistory.Max.append(max(cost))
         self.exper_config.CostHistory.Mean.append(np.mean(cost))
         self.exper_config.CostHistory.Min.append(min(cost))
@@ -233,6 +233,116 @@ class ExperimentResult:
         plt.show()
 
         return pf_X, pf_Y, fig, ax
+    
+    def plot_pareto_frontier_3d(self, Xs, Ys, Zs, maxX=True, maxY=True, maxZ=True, fig=None, ax=None):
+        '''Pareto frontier selection process'''
+        sorted_list = sorted([[Xs[i], Ys[i], Zs[i]] for i in range(len(Xs))], reverse=maxZ)
+        pareto_front = [sorted_list[0]]
+        for point in sorted_list[1:]:
+            if maxZ:
+                if point[2] >= pareto_front[-1][2]:
+                    pareto_front.append(point)
+            else:
+                if point[2] <= pareto_front[-1][2]:
+                    pareto_front.append(point)
+
+        '''Plotting process'''
+        if fig is None or ax is None:
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+                
+        ax.scatter(Xs, Ys, Zs, label='Data')
+        pf_X = [point[0] for point in pareto_front]
+        pf_Y = [point[1] for point in pareto_front]
+        pf_Z = [point[2] for point in pareto_front]
+        
+        ax.plot(pf_X, pf_Y, pf_Z, '^' ,color='red' ,label='Optimal Pareto')
+        ax.set_xlabel("1 - Fidelity")
+        ax.set_ylabel("Cost")
+        # ax.set_zlabel("Throughput")
+        ax.set_title("Pareto frontier")
+        ax.legend(loc="upper right", fontsize=13)
+        plt.show()
+
+        return pf_X, pf_Y, pf_Z, fig, 
+
+    def pareto_frontier_3d_v2(self, obj1, obj2, obj3, plot_frontier=False, pareto_function='min'):
+        """
+        This function plots a 3D Pareto frontier given a set of objective values.
+        """
+        def is_pareto_efficient(costs):
+            is_efficient = np.ones(costs.shape[0], dtype=bool)
+            for i, c in enumerate(costs):
+                is_efficient[i] = np.all(np.any(costs[:i] <= c, axis=1)) and np.all(np.any(costs[i + 1:] <= c, axis=1))
+            return is_efficient
+        
+        def is_pareto_efficient_min(costs):
+            is_efficient = np.ones(costs.shape[0], dtype=bool)
+            for i, c in enumerate(costs):
+                is_efficient[i] = np.all(np.any(costs[:i] >= c, axis=1)) and np.all(np.any(costs[i + 1:] >= c, axis=1))
+            return is_efficient
+
+        # Identify Pareto front points
+        objectives = np.column_stack((obj1, obj2, obj3))
+        if pareto_function == 'max':
+            pareto_efficient = objectives[is_pareto_efficient(objectives)]
+        elif pareto_function == 'min':
+            pareto_efficient = objectives[is_pareto_efficient_min(objectives)]
+        else:
+            raise ValueError('pareto_function must be either "min" or "max"')
+        
+        '''Plotting process'''
+        # if fig is None or ax is None:
+        #     fig = plt.figure()
+        #     ax = fig.add_subplot(111, projection='3d')
+
+        # Plotting
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111, projection='3d')
+
+        # Scatter plot for all points with color based on obj3
+        scatter = ax.scatter(obj1, obj2, obj3, c=obj3, cmap='viridis', label='All Points', alpha=0.8)
+
+        # Scatter plot for Pareto front points
+        if plot_frontier:
+            ax.scatter(pareto_efficient[:, 0], pareto_efficient[:, 1], pareto_efficient[:, 2], c='red', marker='^' ,label='Pareto Front', s=100)
+
+        # Set axis labels
+        ax.set_xlabel('1 - Fidelity')
+        ax.set_ylabel('Cost')
+        ax.set_zlabel('1/Throughput')
+
+        # Set plot title
+        plt.title('3D Pareto Front with Color')
+
+        # Display colorbar
+        cbar = fig.colorbar(scatter, ax=ax, pad=0.1)
+        cbar.set_label('1/Throughput')
+
+        # Display legend
+        ax.legend()
+
+        # Show the plot
+        plt.show()
+
+        fig, ax = plt.subplots(1, 3, figsize=(12, 4))
+        fig.suptitle('2D Projections of Pareto Front')
+        ax[0].scatter(pareto_efficient[:, 0], pareto_efficient[:, 1], c='red', marker='^' ,label='Pareto Front')
+        ax[0].set_xlabel('1 - Fidelity')
+        ax[0].set_ylabel('Cost')
+        ax[0].set_title('(1-F)-C Plane Projection')
+        ax[0].legend()
+        ax[1].scatter(pareto_efficient[:, 0], pareto_efficient[:, 2], c='red', marker='^' ,label='Pareto Front')
+        ax[1].set_xlabel('1 - Fidelity')
+        ax[1].set_ylabel('1/Throughput')
+        ax[1].set_title('(1-F)-(1/TP) Plane Projection')
+        ax[1].legend()
+        ax[2].scatter(pareto_efficient[:, 1], pareto_efficient[:, 2], c='red', marker='^' ,label='Pareto Front')
+        ax[2].set_xlabel('Cost')
+        ax[2].set_ylabel('1/Throughput')
+        ax[2].set_title('C-(1/TP) Plane Projection')
+        ax[2].legend()
+        plt.show()
 
     def plot(self):
         sns.set_theme(style="darkgrid")
@@ -245,7 +355,8 @@ class ExperimentResult:
         mutation_rate = self.exper_config.GeneticAlgorithmConfig.MutationRate
         num_population = self.exper_config.GeneticAlgorithmConfig.PopulationSize
 
-        fig, ax = plt.subplots(3, 2)
+        fig, ax = plt.subplots(3, 2, figsize=(20, 20))
+
         ax[0, 0].set_title(f'w: {weight_f}, mr: {mutation_rate}, pop: {num_population}', loc='right')
 
         color = 'tab:red'
@@ -302,17 +413,33 @@ class ExperimentResult:
         ax[2, 0].fill_between(x, self.exper_config.ThroughtputHistory.Max, self.exper_config.ThroughtputHistory.Min, alpha=0.2, label='range throughput')
         ax[2, 0].legend()
 
-        ax[2, 1].set_title('Final Generation Pareto Fronteir')
+        # ax[2, 1].set_title('Final Generation Pareto Fronteir')
+        # inverse_fidelity = []
+        # for data_point in self.exper_config.FidelityHistory.All[-1]:
+        #     inv_F = 1 - data_point
+        #     inverse_fidelity.append(inv_F)
+
+        # pX, pY, fig, ax[2, 1] = self.plot_pareto_frontier(inverse_fidelity, self.exper_config.CostHistory.All[-1], maxX=False, maxY=False, fig=fig, ax=ax[2, 1])
+        # fig.tight_layout()
+        # plt.show()
+        
+        # fig, ax[2, 1] = self.pareto_frontier_3d_v2(inverse_fidelity, self.exper_config.CostHistory.All[-1], self.exper_config.ThroughtputHistory.All[-1], plot_frontier=True, pareto_function='min', fig=fig, ax=ax[2, 1])
+        fig.tight_layout()
+        plt.show()
+
         inverse_fidelity = []
         for data_point in self.exper_config.FidelityHistory.All[-1]:
             inv_F = 1 - data_point
             inverse_fidelity.append(inv_F)
 
-        pX, pY, fig, ax[2, 1] = self.plot_pareto_frontier(inverse_fidelity, self.exper_config.CostHistory.All[-1], maxX=False, maxY=False, fig=fig, ax=ax[2, 1])
-        fig.tight_layout()
-        plt.show()
+        inverse_throughput = []
+        for data_point in self.exper_config.ThroughtputHistory.All[-1]:
+            inv_TP = 1/data_point
+            inverse_throughput.append(inv_TP)
 
-        print(f'Experiment Name: {self.name}')        
+        self.pareto_frontier_3d_v2(inverse_fidelity, self.exper_config.CostHistory.All[-1], inverse_throughput, plot_frontier=True, pareto_function='min')
+
+        print(f'Experiment Name: {self.name}')    
 
 def read_config(filename):
     with open(f'configs/{filename}', 'r') as f:
